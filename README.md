@@ -58,7 +58,37 @@ sequenceDiagram
 
 ## 🛠️ Getting Started
 
-### Option 1: Run with Cargo (from source)
+### Option 1: Download Pre-built Binary _(easiest)_
+
+Grab the latest binary for your platform directly from the
+[**Releases page**](https://github.com/kerolloz/registry-proxy/releases/latest) —
+no Rust toolchain or Docker required.
+
+| Platform | Architecture | File |
+|---|---|---|
+| macOS | Apple Silicon (M1/M2/M3/M4) | `registry-proxy-aarch64-apple-darwin` |
+| macOS | Intel | `registry-proxy-x86_64-apple-darwin` |
+| Linux | x86_64 | `registry-proxy-x86_64-unknown-linux-gnu` |
+| Linux | ARM64 | `registry-proxy-aarch64-unknown-linux-gnu` |
+| Windows | x86_64 | `registry-proxy-x86_64-pc-windows-msvc.exe` |
+| Windows | ARM64 | `registry-proxy-aarch64-pc-windows-msvc.exe` |
+
+**macOS / Linux** — make it executable and run it:
+
+```bash
+chmod +x registry-proxy-*
+./registry-proxy-aarch64-apple-darwin   # adjust filename for your platform
+```
+
+**Windows** — double-click the `.exe` or run it from PowerShell:
+
+```powershell
+.\registry-proxy-x86_64-pc-windows-msvc.exe
+```
+
+---
+
+### Option 2: Run with Cargo (from source)
 
 **Prerequisites:** [Rust toolchain](https://rustup.rs/) (`cargo`)
 
@@ -76,7 +106,7 @@ PORT=8080 cargo run --release
 
 ---
 
-### Option 2: Run with Docker
+### Option 3: Run with Docker
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/)
 
