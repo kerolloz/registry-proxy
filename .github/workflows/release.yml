@@ -24,7 +24,7 @@ jobs:
             ext: ""
 
           - name: macOS (Intel)
-            os: macos-13 # last Intel-based macOS runner
+            os: macos-15-intel # last Intel-based macOS runner
             target: x86_64-apple-darwin
             ext: ""
 
