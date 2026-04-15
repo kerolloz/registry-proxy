@@ -3,12 +3,6 @@ FROM rust:1.93-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies (required by openssl-sys / native-tls)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 # Cache dependencies first
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
