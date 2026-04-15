@@ -19,12 +19,12 @@ jobs:
         include:
           # ── macOS ──────────────────────────────────────────────────────────
           - name: macOS (Apple Silicon)
-            os: macos-latest        # macos-15, native ARM runner
+            os: macos-latest # macos-15, native ARM runner
             target: aarch64-apple-darwin
             ext: ""
 
           - name: macOS (Intel)
-            os: macos-13            # last Intel-based macOS runner
+            os: macos-13 # last Intel-based macOS runner
             target: x86_64-apple-darwin
             ext: ""
 
@@ -56,7 +56,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
