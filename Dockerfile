@@ -1,12 +1,11 @@
 # ---- Builder Stage ----
-FROM rust:1.94-slim AS builder
+FROM rust:1.94-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies (minimal pkg-config if needed, but no libssl)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
-    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests first to cache dependencies
