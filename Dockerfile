@@ -1,22 +1,34 @@
-# ---- Planner Stage ----
-FROM lukemathwalker/cargo-chef:latest-rust-1.85-bookworm AS planner
-WORKDIR /app
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
 # ---- Builder Stage ----
-FROM lukemathwalker/cargo-chef:latest-rust-1.85-bookworm AS builder
+FROM rust:1.94-slim AS builder
+
 WORKDIR /app
 
-# Copy the recipe from the planner
-COPY --from=planner /app/recipe.json recipe.json
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Build dependencies
-RUN cargo chef cook --release --recipe-path recipe.json
+# Copy manifests first to cache dependencies
+COPY Cargo.toml Cargo.lock ./
 
-# Build the real source
-COPY . .
-RUN cargo build --release && \
+# Create a dummy source file to pre-compile dependencies
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+
+# Build dependencies with cache mounts
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    cargo build --release
+
+# Copy the real source
+COPY src ./src
+
+# Build the application
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    cargo build --release && \
     cp target/release/registry-proxy /app/registry-proxy
 
 # ---- Runtime Stage ----
