@@ -1,46 +1,37 @@
-# ---- Builder Stage ----
-FROM rust:1.94-alpine AS builder
+# ---- Planner Stage ----
+FROM lukemathwalker/cargo-chef:latest-rust-alpine AS planner
+WORKDIR /app
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
+# ---- Builder Stage ----
+FROM lukemathwalker/cargo-chef:latest-rust-alpine AS builder
 WORKDIR /app
 
-# Install build dependencies for Alpine
-RUN apk add --no-cache musl-dev pkgconfig
+RUN apk add --no-cache musl-dev pkgconfig ca-certificates
 
-# Copy manifests first to cache dependencies
-COPY Cargo.toml Cargo.lock ./
+# Copy the recipe from the planner
+COPY --from=planner /app/recipe.json recipe.json
 
-# Create a dummy source file to pre-compile dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
+# Build dependencies
+RUN cargo chef cook --release --recipe-path recipe.json
 
-# Build dependencies with cache mounts
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/app/target \
-    cargo build --release
-
-# Copy the real source
-COPY src ./src
-
-# Build the application
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/app/target \
-    cargo build --release && \
+# Build the real source
+COPY . .
+RUN cargo build --release && \
     cp target/release/registry-proxy /app/registry-proxy
 
 # ---- Runtime Stage ----
-FROM alpine:latest AS runtime
+FROM scratch AS runtime
 
 WORKDIR /app
 
-# Install CA certificates for secure upstream connections
-RUN apk add --no-cache ca-certificates
-
-# Copy the binary from the builder
+# Copy the CA certificates from the builder stage for HTTPS requests
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /app/registry-proxy /app/registry-proxy
 
 EXPOSE 4873
+
 ENV PORT=4873
 
-# Standard Alpine run
 CMD ["/app/registry-proxy"]
