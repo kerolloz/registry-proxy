@@ -1,28 +1,31 @@
-# ---- Build Stage ----
-FROM rust:1.93-slim AS builder
+# ---- Planner Stage ----
+FROM lukemathwalker/cargo-chef:latest-rust-1.85-bookworm AS planner
+WORKDIR /app
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
+# ---- Builder Stage ----
+FROM lukemathwalker/cargo-chef:latest-rust-1.85-bookworm AS builder
 WORKDIR /app
 
-# Cache dependencies first
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release
-RUN rm -f target/release/deps/registry_proxy*
+# Copy the recipe from the planner
+COPY --from=planner /app/recipe.json recipe.json
+
+# Build dependencies
+RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build the real source
-COPY src ./src
-RUN cargo build --release
+COPY . .
+RUN cargo build --release && \
+    cp target/release/registry-proxy /app/registry-proxy
 
 # ---- Runtime Stage ----
-FROM debian:bookworm-slim AS runtime
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM gcr.io/distroless/cc-debian12 AS runtime
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/registry-proxy /app/registry-proxy
+# Copy the binary from the builder
+COPY --from=builder /app/registry-proxy /app/registry-proxy
 
 EXPOSE 4873
 

@@ -92,7 +92,7 @@ jobs:
           echo "ARTIFACT=${DEST}" >> $GITHUB_ENV
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT }}
           path: ${{ env.ARTIFACT }}
@@ -110,7 +110,7 @@ jobs:
           merge-multiple: true
 
       - name: Create release and upload binaries
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
           generate_release_notes: true
