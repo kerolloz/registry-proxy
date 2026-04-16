@@ -1,13 +1,10 @@
 # ---- Builder Stage ----
-# Using official Rust Bookworm Slim image for high compatibility with Distroless Debian 12
-FROM rust:1.94-slim-bookworm AS builder
+FROM rust:1.94-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+# Install build dependencies for Alpine
+RUN apk add --no-cache musl-dev pkgconfig
 
 # Copy manifests first to cache dependencies
 COPY Cargo.toml Cargo.lock ./
@@ -32,21 +29,18 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cp target/release/registry-proxy /app/registry-proxy
 
 # ---- Runtime Stage ----
-# Distroless CC image includes only glibc and basic C++ libs for minimal attack surface
-FROM gcr.io/distroless/cc-debian13 AS runtime
+FROM alpine:latest AS runtime
 
 WORKDIR /app
 
-# Run as nonroot user for enhanced security
-# Distroless images come with a 'nonroot' user (UID 65532) out of the box
-USER nonroot
+# Install CA certificates for secure upstream connections
+RUN apk add --no-cache ca-certificates
 
-# Copy the binary from the builder with correct ownership
-COPY --from=builder --chown=nonroot:nonroot /app/registry-proxy /app/registry-proxy
+# Copy the binary from the builder
+COPY --from=builder /app/registry-proxy /app/registry-proxy
 
 EXPOSE 4873
-
 ENV PORT=4873
 
-# Execute binary directly (no shell in distroless)
+# Standard Alpine run
 CMD ["/app/registry-proxy"]
